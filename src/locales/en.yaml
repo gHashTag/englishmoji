@@ -1,0 +1,8 @@
+intro: Choose your test
+Question: Question
+from: from
+coursejs: Questions from JavaScript course
+coursern: Questions from React Native course
+coursets: Questions from TypeScript course
+score: Your score 🎯
+level: Level
