@@ -59,7 +59,7 @@ bot.command('start', ({ reply, i18n }) => {
     m.callbackButton('Time🕐', 'test_time'),
     m.callbackButton('People👩‍🎤', 'test_people')
   ]
-  const kb = m.inlineKeyboard(btns)
+  const kb = m.inlineKeyboard(btns, { columns: 1 })
   return reply(`${i18n.t('intro')}:`, kb.extra())
 })
 
