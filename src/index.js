@@ -49,15 +49,15 @@ bot.use(stage)
 
 bot.command('start', ({ reply, i18n }) => {
   const btns = [
-    m.callbackButton('Food🍕 and drink🥤', 'test_food'),
+    m.callbackButton('Food🍕', 'test_food'),
     m.callbackButton('Animals🐳', 'test_animals'),
     m.callbackButton('Activity🏀', 'test_activity'),
     m.callbackButton('Dress👗', 'test_dress'),
     m.callbackButton('Travel🌎', 'test_travel'),
-    m.callbackButton('Objects', 'test_objects'),
-    m.callbackButton('Symbols', 'test_symbols'),
-    m.callbackButton('Time', 'test_time'),
-    m.callbackButton('People', 'test_people')
+    m.callbackButton('Objects🎮', 'test_objects'),
+    m.callbackButton('Symbols☮️', 'test_symbols'),
+    m.callbackButton('Time🕐', 'test_time'),
+    m.callbackButton('People👩‍🎤', 'test_people')
   ]
   const kb = m.inlineKeyboard(btns)
   return reply(`${i18n.t('intro')}:`, kb.extra())
