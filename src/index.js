@@ -71,7 +71,7 @@ bot.action(/^test_(\w+)$/, async (ctx) => {
 bot.command('session', (ctx) => ctx.reply(ctx.session))
 
 const foodRoom = new BaseScene('room-food').enter((ctx) => {
-  const { i18n, session, replyWithQuiz } = ctx
+  const { i18n, session, reply, replyWithQuiz } = ctx
 
   const questions = food
   const questionIndex = 0
@@ -80,11 +80,14 @@ const foodRoom = new BaseScene('room-food').enter((ctx) => {
   session.questionIndex = questionIndex
 
   const { title, correct_option_id, random } = getObj(questions, questionIndex)
+  reply('https://youtu.be/95o7TTXN6kg')
 
-  replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
-    correct_option_id,
-    is_anonymous: false
-  })
+  setTimeout(() => {
+    replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
+      correct_option_id,
+      is_anonymous: false
+    })
+  }, 2000)
 })
 stage.register(foodRoom)
 
@@ -122,7 +125,7 @@ foodRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, s
 })
 
 const animalsRoom = new BaseScene('room-animals').enter((ctx) => {
-  const { i18n, session, replyWithQuiz } = ctx
+  const { reply, i18n, session, replyWithQuiz } = ctx
 
   const questions = animals
   const questionIndex = 0
@@ -131,11 +134,13 @@ const animalsRoom = new BaseScene('room-animals').enter((ctx) => {
   session.questionIndex = questionIndex
 
   const { title, correct_option_id, random } = getObj(questions, questionIndex)
-
-  replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
-    correct_option_id,
-    is_anonymous: false
-  })
+  reply('https://youtu.be/k-faBaOPbwo')
+  setTimeout(() => {
+    replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
+      correct_option_id,
+      is_anonymous: false
+    })
+  }, 2000)
 })
 stage.register(animalsRoom)
 
@@ -173,7 +178,7 @@ animalsRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply
 })
 
 const activityRoom = new BaseScene('room-activity').enter((ctx) => {
-  const { i18n, session, replyWithQuiz } = ctx
+  const { reply, i18n, session, replyWithQuiz } = ctx
 
   const questions = activity
   const questionIndex = 0
@@ -182,11 +187,13 @@ const activityRoom = new BaseScene('room-activity').enter((ctx) => {
   session.questionIndex = questionIndex
 
   const { title, correct_option_id, random } = getObj(questions, questionIndex)
-
-  replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
-    correct_option_id,
-    is_anonymous: false
-  })
+  reply('https://youtu.be/wzZIQm3VkvI')
+  setTimeout(() => {
+    replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
+      correct_option_id,
+      is_anonymous: false
+    })
+  }, 2000)
 })
 stage.register(activityRoom)
 
@@ -224,7 +231,7 @@ activityRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, repl
 })
 
 const dressRoom = new BaseScene('room-dress').enter((ctx) => {
-  const { i18n, session, replyWithQuiz } = ctx
+  const { reply, i18n, session, replyWithQuiz } = ctx
 
   const questions = dress
   const questionIndex = 0
@@ -233,11 +240,13 @@ const dressRoom = new BaseScene('room-dress').enter((ctx) => {
   session.questionIndex = questionIndex
 
   const { title, correct_option_id, random } = getObj(questions, questionIndex)
-
-  replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
-    correct_option_id,
-    is_anonymous: false
-  })
+  reply('https://youtu.be/Il3TBIh26U0')
+  setTimeout(() => {
+    replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
+      correct_option_id,
+      is_anonymous: false
+    })
+  }, 2000)
 })
 stage.register(dressRoom)
 
@@ -275,7 +284,7 @@ dressRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, 
 })
 
 const travelRoom = new BaseScene('room-travel').enter((ctx) => {
-  const { i18n, session, replyWithQuiz } = ctx
+  const { reply, i18n, session, replyWithQuiz } = ctx
 
   const questions = travel
   const questionIndex = 0
@@ -284,11 +293,13 @@ const travelRoom = new BaseScene('room-travel').enter((ctx) => {
   session.questionIndex = questionIndex
 
   const { title, correct_option_id, random } = getObj(questions, questionIndex)
-
-  replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
-    correct_option_id,
-    is_anonymous: false
-  })
+  reply('https://youtu.be/aoGiGbi540k')
+  setTimeout(() => {
+    replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
+      correct_option_id,
+      is_anonymous: false
+    })
+  }, 2000)
 })
 stage.register(travelRoom)
 
@@ -326,7 +337,7 @@ travelRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply,
 })
 
 const objectsRoom = new BaseScene('room-objects').enter((ctx) => {
-  const { i18n, session, replyWithQuiz } = ctx
+  const { reply, i18n, session, replyWithQuiz } = ctx
 
   const questions = objects
   const questionIndex = 0
@@ -335,11 +346,13 @@ const objectsRoom = new BaseScene('room-objects').enter((ctx) => {
   session.questionIndex = questionIndex
 
   const { title, correct_option_id, random } = getObj(questions, questionIndex)
-
-  replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
-    correct_option_id,
-    is_anonymous: false
-  })
+  reply('https://youtu.be/0zIsDnmfqfQ')
+  setTimeout(() => {
+    replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
+      correct_option_id,
+      is_anonymous: false
+    })
+  }, 2000)
 })
 stage.register(objectsRoom)
 
@@ -377,7 +390,7 @@ objectsRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply
 })
 
 const symbolsRoom = new BaseScene('room-symbols').enter((ctx) => {
-  const { i18n, session, replyWithQuiz } = ctx
+  const { reply, i18n, session, replyWithQuiz } = ctx
 
   const questions = symbols
   const questionIndex = 0
@@ -386,11 +399,13 @@ const symbolsRoom = new BaseScene('room-symbols').enter((ctx) => {
   session.questionIndex = questionIndex
 
   const { title, correct_option_id, random } = getObj(questions, questionIndex)
-
-  replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
-    correct_option_id,
-    is_anonymous: false
-  })
+  reply('https://youtu.be/432vDNxMOpw')
+  setTimeout(() => {
+    replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
+      correct_option_id,
+      is_anonymous: false
+    })
+  }, 2000)
 })
 stage.register(symbolsRoom)
 
@@ -428,7 +443,7 @@ symbolsRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply
 })
 
 const timeRoom = new BaseScene('room-time').enter((ctx) => {
-  const { i18n, session, replyWithQuiz } = ctx
+  const { reply, i18n, session, replyWithQuiz } = ctx
 
   const questions = time
   const questionIndex = 0
@@ -437,11 +452,13 @@ const timeRoom = new BaseScene('room-time').enter((ctx) => {
   session.questionIndex = questionIndex
 
   const { title, correct_option_id, random } = getObj(questions, questionIndex)
-
-  replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
-    correct_option_id,
-    is_anonymous: false
-  })
+  reply('https://youtu.be/FcO-d7hn_NU')
+  setTimeout(() => {
+    replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
+      correct_option_id,
+      is_anonymous: false
+    })
+  }, 2000)
 })
 stage.register(timeRoom)
 
@@ -479,7 +496,7 @@ timeRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, s
 })
 
 const peopleRoom = new BaseScene('room-people').enter((ctx) => {
-  const { i18n, session, replyWithQuiz } = ctx
+  const { reply, i18n, session, replyWithQuiz } = ctx
 
   const questions = people
   const questionIndex = 0
@@ -488,11 +505,13 @@ const peopleRoom = new BaseScene('room-people').enter((ctx) => {
   session.questionIndex = questionIndex
 
   const { title, correct_option_id, random } = getObj(questions, questionIndex)
-
-  replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
-    correct_option_id,
-    is_anonymous: false
-  })
+  reply('https://youtu.be/9nITEQEKBxs')
+  setTimeout(() => {
+    replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
+      correct_option_id,
+      is_anonymous: false
+    })
+  }, 2000)
 })
 stage.register(peopleRoom)
 
@@ -530,7 +549,7 @@ peopleRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply,
 })
 
 const natureRoom = new BaseScene('room-nature').enter((ctx) => {
-  const { i18n, session, replyWithQuiz } = ctx
+  const { reply, i18n, session, replyWithQuiz } = ctx
 
   const questions = nature
   const questionIndex = 0
@@ -539,11 +558,13 @@ const natureRoom = new BaseScene('room-nature').enter((ctx) => {
   session.questionIndex = questionIndex
 
   const { title, correct_option_id, random } = getObj(questions, questionIndex)
-
-  replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
-    correct_option_id,
-    is_anonymous: false
-  })
+  reply('https://youtu.be/Ncy7chtb0CM')
+  setTimeout(() => {
+    replyWithQuiz(`${i18n.t('Question')}: 1 ${i18n.t('from')} ${questions.length}\n\n${title}`, random, {
+      correct_option_id,
+      is_anonymous: false
+    })
+  }, 2000)
 })
 stage.register(natureRoom)
 
