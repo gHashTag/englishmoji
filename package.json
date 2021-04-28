@@ -15,12 +15,14 @@
   },
   "main": "index.js",
   "dependencies": {
+    "@google-cloud/firestore": "^4.10.0",
     "@google/chatbase": "^1.1.2",
     "dotenv": "^8.2.0",
     "node-emoji": "^1.10.0",
     "nodemon": "^2.0.7",
     "telegraf": "3.38",
-    "telegraf-i18n": "^6.6.0"
+    "telegraf-i18n": "^6.6.0",
+    "telegraf-session-firestore": "^4.0.0"
   },
   "devDependencies": {
     "eslint": "^7.22.0",

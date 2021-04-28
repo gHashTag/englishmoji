@@ -1,11 +1,19 @@
 /* eslint-disable indent */
 require('dotenv').config()
-const { Telegraf, session, Stage, BaseScene, Markup: m } = require('telegraf')
+const { Telegraf, Stage, BaseScene, Markup: m } = require('telegraf')
 const TelegrafI18n = require('telegraf-i18n')
-const { level, getSticker, MyContext } = require('./helpers')
+const { level, getSticker, MyContext, getInvoice } = require('./helpers')
 const { food, animals, activity, dress, travel, objects, symbols, time, people, nature } = require('./quiz')
 const path = require('path')
 const emoji = require('node-emoji')
+const firestoreSession = require('telegraf-session-firestore')
+const { Firestore } = require('@google-cloud/firestore')
+
+// https://firebase.google.com/docs/admin/setup
+const db = new Firestore({
+  projectId: 'englishmoji-db358',
+  keyFilename: 'firestore-keyfile.json'
+})
 
 // const index = 1
 // const arr = jsEn
@@ -40,14 +48,15 @@ if (process.env.NODE_ENV === 'production') {
 
 const bot = new Telegraf(BOT_TOKEN, { contextType: MyContext })
 
+bot.use(firestoreSession(db.collection('sessions')))
 bot.use(i18n.middleware())
 
 const stage = new Stage()
 
-bot.use(session())
+//bot.use(session())
 bot.use(stage)
 
-bot.command('start', ({ reply, i18n }) => {
+const start = ({ reply, i18n }) => {
   const btns = [
     m.callbackButton('Food 🍕', 'test_food'),
     m.callbackButton('Animals 🐳', 'test_animals'),
@@ -61,7 +70,9 @@ bot.command('start', ({ reply, i18n }) => {
   ]
   const kb = m.inlineKeyboard(btns, { columns: 1 })
   return reply(`${i18n.t('intro')}:`, kb.extra())
-})
+}
+
+bot.command('start', start)
 
 bot.action(/^test_(\w+)$/, async (ctx) => {
   await ctx.scene.enter('room-' + ctx.match[1])
@@ -71,13 +82,14 @@ bot.action(/^test_(\w+)$/, async (ctx) => {
 bot.command('session', (ctx) => ctx.reply(ctx.session))
 
 const foodRoom = new BaseScene('room-food').enter((ctx) => {
-  const { i18n, session, reply, replyWithQuiz } = ctx
+  const { i18n, session, reply, replyWithQuiz, from } = ctx
 
   const questions = food
   const questionIndex = 0
   const counter = 0
   session.counter = counter
   session.questionIndex = questionIndex
+  session.user = from
 
   const { title, correct_option_id, random } = getObj(questions, questionIndex)
   reply('https://youtu.be/95o7TTXN6kg')
@@ -91,37 +103,54 @@ const foodRoom = new BaseScene('room-food').enter((ctx) => {
 })
 stage.register(foodRoom)
 
-foodRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update }) => {
-  const questions = food
-  const questionIndex = ++session.questionIndex
-  const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
-  result && ++session.counter
-  const length = questions.length
+foodRoom.on(
+  'poll_answer',
+  ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update, replyWithInvoice, from: { id } }) => {
+    if (session.questionIndex > 14 && !session.access) {
+      return replyWithInvoice(getInvoice(i18n, id))
+    }
+    const questions = food
+    const questionIndex = ++session.questionIndex
+    const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
+    result && ++session.counter
+    const length = questions.length
 
-  if (questionIndex !== questions.length) {
-    const { title, correct_option_id, random } = getObj(questions, questionIndex)
-    replyWithQuiz(
-      `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
+    if (questionIndex !== questions.length) {
+      const { title, correct_option_id, random } = getObj(questions, questionIndex)
+      replyWithQuiz(
+        `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
        
 
 
        ${i18n.t('score')} ${session.counter}`,
-      random,
-      {
-        correct_option_id,
-        is_anonymous: false
-      }
-    )
-  } else {
-    reply(
-      `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
-        session.counter,
-        length
-      )}`
-    )
-  }
+        random,
+        {
+          correct_option_id,
+          is_anonymous: false
+        }
+      )
+    } else {
+      reply(
+        `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
+          session.counter,
+          length
+        )}`
+      )
+    }
 
-  scene.current.leave()
+    scene.current.leave()
+  }
+)
+
+bot.on('pre_checkout_query', ({ answerPreCheckoutQuery }) => answerPreCheckoutQuery(true))
+
+bot.on('successful_payment', async (ctx, next) => {
+  ctx.session.access = true
+
+  await ctx.reply(ctx.i18n.t('SuccessfulPayment'))
+  start(ctx)
+
+  return next(ctx)
 })
 
 const animalsRoom = new BaseScene('room-animals').enter((ctx) => {
@@ -144,38 +173,44 @@ const animalsRoom = new BaseScene('room-animals').enter((ctx) => {
 })
 stage.register(animalsRoom)
 
-animalsRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update }) => {
-  const questions = animals
-  const questionIndex = ++session.questionIndex
-  const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
-  result && ++session.counter
-  const length = questions.length
+animalsRoom.on(
+  'poll_answer',
+  ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update, replyWithInvoice, from: { id } }) => {
+    if (session.questionIndex > 14 && !session.access) {
+      return replyWithInvoice(getInvoice(i18n, id))
+    }
+    const questions = animals
+    const questionIndex = ++session.questionIndex
+    const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
+    result && ++session.counter
+    const length = questions.length
 
-  if (questionIndex !== questions.length) {
-    const { title, correct_option_id, random } = getObj(questions, questionIndex)
-    replyWithQuiz(
-      `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
+    if (questionIndex !== questions.length) {
+      const { title, correct_option_id, random } = getObj(questions, questionIndex)
+      replyWithQuiz(
+        `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
        
 
 
        ${i18n.t('score')} ${session.counter}`,
-      random,
-      {
-        correct_option_id,
-        is_anonymous: false
-      }
-    )
-  } else {
-    reply(
-      `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
-        session.counter,
-        length
-      )}`
-    )
-  }
+        random,
+        {
+          correct_option_id,
+          is_anonymous: false
+        }
+      )
+    } else {
+      reply(
+        `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
+          session.counter,
+          length
+        )}`
+      )
+    }
 
-  scene.current.leave()
-})
+    scene.current.leave()
+  }
+)
 
 const activityRoom = new BaseScene('room-activity').enter((ctx) => {
   const { reply, i18n, session, replyWithQuiz } = ctx
@@ -197,38 +232,44 @@ const activityRoom = new BaseScene('room-activity').enter((ctx) => {
 })
 stage.register(activityRoom)
 
-activityRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update }) => {
-  const questions = activity
-  const questionIndex = ++session.questionIndex
-  const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
-  result && ++session.counter
-  const length = questions.length
+activityRoom.on(
+  'poll_answer',
+  ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update, replyWithInvoice, from: { id } }) => {
+    if (session.questionIndex > 14 && !session.access) {
+      return replyWithInvoice(getInvoice(i18n, id))
+    }
+    const questions = activity
+    const questionIndex = ++session.questionIndex
+    const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
+    result && ++session.counter
+    const length = questions.length
 
-  if (questionIndex !== questions.length) {
-    const { title, correct_option_id, random } = getObj(questions, questionIndex)
-    replyWithQuiz(
-      `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
+    if (questionIndex !== questions.length) {
+      const { title, correct_option_id, random } = getObj(questions, questionIndex)
+      replyWithQuiz(
+        `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
        
 
 
        ${i18n.t('score')} ${session.counter}`,
-      random,
-      {
-        correct_option_id,
-        is_anonymous: false
-      }
-    )
-  } else {
-    reply(
-      `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
-        session.counter,
-        length
-      )}`
-    )
-  }
+        random,
+        {
+          correct_option_id,
+          is_anonymous: false
+        }
+      )
+    } else {
+      reply(
+        `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
+          session.counter,
+          length
+        )}`
+      )
+    }
 
-  scene.current.leave()
-})
+    scene.current.leave()
+  }
+)
 
 const dressRoom = new BaseScene('room-dress').enter((ctx) => {
   const { reply, i18n, session, replyWithQuiz } = ctx
@@ -250,38 +291,44 @@ const dressRoom = new BaseScene('room-dress').enter((ctx) => {
 })
 stage.register(dressRoom)
 
-dressRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update }) => {
-  const questions = dress
-  const questionIndex = ++session.questionIndex
-  const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
-  result && ++session.counter
-  const length = questions.length
+dressRoom.on(
+  'poll_answer',
+  ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update, replyWithInvoice, from: { id } }) => {
+    if (session.questionIndex > 14 && !session.access) {
+      return replyWithInvoice(getInvoice(i18n, id))
+    }
+    const questions = dress
+    const questionIndex = ++session.questionIndex
+    const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
+    result && ++session.counter
+    const length = questions.length
 
-  if (questionIndex !== questions.length) {
-    const { title, correct_option_id, random } = getObj(questions, questionIndex)
-    replyWithQuiz(
-      `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
+    if (questionIndex !== questions.length) {
+      const { title, correct_option_id, random } = getObj(questions, questionIndex)
+      replyWithQuiz(
+        `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
        
 
 
        ${i18n.t('score')} ${session.counter}`,
-      random,
-      {
-        correct_option_id,
-        is_anonymous: false
-      }
-    )
-  } else {
-    reply(
-      `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
-        session.counter,
-        length
-      )}`
-    )
-  }
+        random,
+        {
+          correct_option_id,
+          is_anonymous: false
+        }
+      )
+    } else {
+      reply(
+        `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
+          session.counter,
+          length
+        )}`
+      )
+    }
 
-  scene.current.leave()
-})
+    scene.current.leave()
+  }
+)
 
 const travelRoom = new BaseScene('room-travel').enter((ctx) => {
   const { reply, i18n, session, replyWithQuiz } = ctx
@@ -303,38 +350,44 @@ const travelRoom = new BaseScene('room-travel').enter((ctx) => {
 })
 stage.register(travelRoom)
 
-travelRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update }) => {
-  const questions = travel
-  const questionIndex = ++session.questionIndex
-  const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
-  result && ++session.counter
-  const length = questions.length
+travelRoom.on(
+  'poll_answer',
+  ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update, replyWithInvoice, from: { id } }) => {
+    if (session.questionIndex > 14 && !session.access) {
+      return replyWithInvoice(getInvoice(i18n, id))
+    }
+    const questions = travel
+    const questionIndex = ++session.questionIndex
+    const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
+    result && ++session.counter
+    const length = questions.length
 
-  if (questionIndex !== questions.length) {
-    const { title, correct_option_id, random } = getObj(questions, questionIndex)
-    replyWithQuiz(
-      `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
+    if (questionIndex !== questions.length) {
+      const { title, correct_option_id, random } = getObj(questions, questionIndex)
+      replyWithQuiz(
+        `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
        
 
 
        ${i18n.t('score')} ${session.counter}`,
-      random,
-      {
-        correct_option_id,
-        is_anonymous: false
-      }
-    )
-  } else {
-    reply(
-      `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
-        session.counter,
-        length
-      )}`
-    )
-  }
+        random,
+        {
+          correct_option_id,
+          is_anonymous: false
+        }
+      )
+    } else {
+      reply(
+        `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
+          session.counter,
+          length
+        )}`
+      )
+    }
 
-  scene.current.leave()
-})
+    scene.current.leave()
+  }
+)
 
 const objectsRoom = new BaseScene('room-objects').enter((ctx) => {
   const { reply, i18n, session, replyWithQuiz } = ctx
@@ -356,38 +409,44 @@ const objectsRoom = new BaseScene('room-objects').enter((ctx) => {
 })
 stage.register(objectsRoom)
 
-objectsRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update }) => {
-  const questions = objects
-  const questionIndex = ++session.questionIndex
-  const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
-  result && ++session.counter
-  const length = questions.length
+objectsRoom.on(
+  'poll_answer',
+  ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update, replyWithInvoice, from: { id } }) => {
+    if (session.questionIndex > 14 && !session.access) {
+      return replyWithInvoice(getInvoice(i18n, id))
+    }
+    const questions = objects
+    const questionIndex = ++session.questionIndex
+    const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
+    result && ++session.counter
+    const length = questions.length
 
-  if (questionIndex !== questions.length) {
-    const { title, correct_option_id, random } = getObj(questions, questionIndex)
-    replyWithQuiz(
-      `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
+    if (questionIndex !== questions.length) {
+      const { title, correct_option_id, random } = getObj(questions, questionIndex)
+      replyWithQuiz(
+        `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
        
 
 
        ${i18n.t('score')} ${session.counter}`,
-      random,
-      {
-        correct_option_id,
-        is_anonymous: false
-      }
-    )
-  } else {
-    reply(
-      `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
-        session.counter,
-        length
-      )}`
-    )
-  }
+        random,
+        {
+          correct_option_id,
+          is_anonymous: false
+        }
+      )
+    } else {
+      reply(
+        `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
+          session.counter,
+          length
+        )}`
+      )
+    }
 
-  scene.current.leave()
-})
+    scene.current.leave()
+  }
+)
 
 const symbolsRoom = new BaseScene('room-symbols').enter((ctx) => {
   const { reply, i18n, session, replyWithQuiz } = ctx
@@ -409,38 +468,44 @@ const symbolsRoom = new BaseScene('room-symbols').enter((ctx) => {
 })
 stage.register(symbolsRoom)
 
-symbolsRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update }) => {
-  const questions = symbols
-  const questionIndex = ++session.questionIndex
-  const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
-  result && ++session.counter
-  const length = questions.length
+symbolsRoom.on(
+  'poll_answer',
+  ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update, replyWithInvoice, from: { id } }) => {
+    if (session.questionIndex > 14 && !session.access) {
+      return replyWithInvoice(getInvoice(i18n, id))
+    }
+    const questions = symbols
+    const questionIndex = ++session.questionIndex
+    const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
+    result && ++session.counter
+    const length = questions.length
 
-  if (questionIndex !== questions.length) {
-    const { title, correct_option_id, random } = getObj(questions, questionIndex)
-    replyWithQuiz(
-      `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
+    if (questionIndex !== questions.length) {
+      const { title, correct_option_id, random } = getObj(questions, questionIndex)
+      replyWithQuiz(
+        `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
        
 
 
        ${i18n.t('score')} ${session.counter}`,
-      random,
-      {
-        correct_option_id,
-        is_anonymous: false
-      }
-    )
-  } else {
-    reply(
-      `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
-        session.counter,
-        length
-      )}`
-    )
-  }
+        random,
+        {
+          correct_option_id,
+          is_anonymous: false
+        }
+      )
+    } else {
+      reply(
+        `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
+          session.counter,
+          length
+        )}`
+      )
+    }
 
-  scene.current.leave()
-})
+    scene.current.leave()
+  }
+)
 
 const timeRoom = new BaseScene('room-time').enter((ctx) => {
   const { reply, i18n, session, replyWithQuiz } = ctx
@@ -462,38 +527,44 @@ const timeRoom = new BaseScene('room-time').enter((ctx) => {
 })
 stage.register(timeRoom)
 
-timeRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update }) => {
-  const questions = time
-  const questionIndex = ++session.questionIndex
-  const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
-  result && ++session.counter
-  const length = questions.length
+timeRoom.on(
+  'poll_answer',
+  ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update, replyWithInvoice, from: { id } }) => {
+    if (session.questionIndex > 14 && !session.access) {
+      return replyWithInvoice(getInvoice(i18n, id))
+    }
+    const questions = time
+    const questionIndex = ++session.questionIndex
+    const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
+    result && ++session.counter
+    const length = questions.length
 
-  if (questionIndex !== questions.length) {
-    const { title, correct_option_id, random } = getObj(questions, questionIndex)
-    replyWithQuiz(
-      `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
+    if (questionIndex !== questions.length) {
+      const { title, correct_option_id, random } = getObj(questions, questionIndex)
+      replyWithQuiz(
+        `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
        
 
 
        ${i18n.t('score')} ${session.counter}`,
-      random,
-      {
-        correct_option_id,
-        is_anonymous: false
-      }
-    )
-  } else {
-    reply(
-      `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
-        session.counter,
-        length
-      )}`
-    )
-  }
+        random,
+        {
+          correct_option_id,
+          is_anonymous: false
+        }
+      )
+    } else {
+      reply(
+        `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
+          session.counter,
+          length
+        )}`
+      )
+    }
 
-  scene.current.leave()
-})
+    scene.current.leave()
+  }
+)
 
 const peopleRoom = new BaseScene('room-people').enter((ctx) => {
   const { reply, i18n, session, replyWithQuiz } = ctx
@@ -515,38 +586,44 @@ const peopleRoom = new BaseScene('room-people').enter((ctx) => {
 })
 stage.register(peopleRoom)
 
-peopleRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update }) => {
-  const questions = people
-  const questionIndex = ++session.questionIndex
-  const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
-  result && ++session.counter
-  const length = questions.length
+peopleRoom.on(
+  'poll_answer',
+  ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update, replyWithInvoice, from: { id } }) => {
+    if (session.questionIndex > 14 && !session.access) {
+      return replyWithInvoice(getInvoice(i18n, id))
+    }
+    const questions = people
+    const questionIndex = ++session.questionIndex
+    const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
+    result && ++session.counter
+    const length = questions.length
 
-  if (questionIndex !== questions.length) {
-    const { title, correct_option_id, random } = getObj(questions, questionIndex)
-    replyWithQuiz(
-      `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
+    if (questionIndex !== questions.length) {
+      const { title, correct_option_id, random } = getObj(questions, questionIndex)
+      replyWithQuiz(
+        `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
        
 
 
        ${i18n.t('score')} ${session.counter}`,
-      random,
-      {
-        correct_option_id,
-        is_anonymous: false
-      }
-    )
-  } else {
-    reply(
-      `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
-        session.counter,
-        length
-      )}`
-    )
-  }
+        random,
+        {
+          correct_option_id,
+          is_anonymous: false
+        }
+      )
+    } else {
+      reply(
+        `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
+          session.counter,
+          length
+        )}`
+      )
+    }
 
-  scene.current.leave()
-})
+    scene.current.leave()
+  }
+)
 
 const natureRoom = new BaseScene('room-nature').enter((ctx) => {
   const { reply, i18n, session, replyWithQuiz } = ctx
@@ -568,38 +645,44 @@ const natureRoom = new BaseScene('room-nature').enter((ctx) => {
 })
 stage.register(natureRoom)
 
-natureRoom.on('poll_answer', ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update }) => {
-  const questions = nature
-  const questionIndex = ++session.questionIndex
-  const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
-  result && ++session.counter
-  const length = questions.length
+natureRoom.on(
+  'poll_answer',
+  ({ session, pollAnswer, replyWithQuiz, i18n, reply, scene, update, replyWithInvoice, from: { id } }) => {
+    if (session.questionIndex > 14 && !session.access) {
+      return replyWithInvoice(getInvoice(i18n, id))
+    }
+    const questions = nature
+    const questionIndex = ++session.questionIndex
+    const result = questions[questionIndex - 1].correct_option_id === pollAnswer.option_ids[0]
+    result && ++session.counter
+    const length = questions.length
 
-  if (questionIndex !== questions.length) {
-    const { title, correct_option_id, random } = getObj(questions, questionIndex)
-    replyWithQuiz(
-      `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
+    if (questionIndex !== questions.length) {
+      const { title, correct_option_id, random } = getObj(questions, questionIndex)
+      replyWithQuiz(
+        `${i18n.t('Question')}: ${questionIndex + 1} ${i18n.t('from')} ${questions.length}\n\n${title}
        
 
 
        ${i18n.t('score')} ${session.counter}`,
-      random,
-      {
-        correct_option_id,
-        is_anonymous: false
-      }
-    )
-  } else {
-    reply(
-      `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
-        session.counter,
-        length
-      )}`
-    )
-  }
+        random,
+        {
+          correct_option_id,
+          is_anonymous: false
+        }
+      )
+    } else {
+      reply(
+        `${i18n.t('score')} ${session.counter}. ${i18n.t('level')}: ${level(session.counter, length)} ${getSticker(
+          session.counter,
+          length
+        )}`
+      )
+    }
 
-  scene.current.leave()
-})
+    scene.current.leave()
+  }
+)
 
 // eslint-disable-next-line no-console
 bot.catch((err) => console.log(err))

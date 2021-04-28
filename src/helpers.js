@@ -65,8 +65,35 @@ const getSticker = (score, length) => {
   return str
 }
 
+let PROVIDER_TOKEN
+
+if (process.env.NODE_ENV === 'production') {
+  PROVIDER_TOKEN = process.env.PROVIDER_TOKEN
+} else {
+  PROVIDER_TOKEN = process.env.PROVIDER_TOKEN_TEST
+}
+
+const getInvoice = (i18n, id) => {
+  const invoice = {
+    chat_id: id,
+    provider_token: PROVIDER_TOKEN,
+    start_parameter: 'get_access',
+    title: i18n.t('InvoiceTitle'),
+    description: i18n.t('InvoiceDescription'),
+    currency: 'RUB',
+    prices: [{ label: i18n.t('InvoiceTitle'), amount: 100 * 100 }],
+    payload: {
+      unique_id: `${id}_${Number(new Date())}`,
+      provider_token: process.env.PROVIDER_TOKEN
+    }
+  }
+
+  return invoice
+}
+
 module.exports = {
   level,
   getSticker,
-  MyContext
+  MyContext,
+  getInvoice
 }
