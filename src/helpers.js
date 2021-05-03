@@ -82,8 +82,11 @@ const getInvoice = (i18n, id) => {
     description: i18n.t('InvoiceDescription'),
     currency: 'RUB',
     prices: [{ label: i18n.t('InvoiceTitle'), amount: 100 * 100 }],
+    photo_url: 'https://s3.eu-central-1.wasabisys.com/ghashtag/EnglishmojiBot/invoiceRect.jpg',
+    photo_width: 500,
+    photo_height: 281,
     payload: {
-      unique_id: `${id}_${Number(new Date())}`,
+      unique_id: `Englishmoji_${id}_${Number(new Date())}`,
       provider_token: process.env.PROVIDER_TOKEN
     }
   }
