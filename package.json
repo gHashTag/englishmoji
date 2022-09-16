@@ -7,11 +7,11 @@
   "scripts": {
     "lint": "eslint .",
     "start": "nodemon index",
-    "push": "git push heroku heroku:main",
-    "logs": "heroku logs -a javascriptcampbot -t"
+    "dev": "vc dev",
+    "tunnel": "lt --port 3000 & vc dev"
   },
   "engines": {
-    "node": "14"
+    "node": "18"
   },
   "main": "index.js",
   "dependencies": {
